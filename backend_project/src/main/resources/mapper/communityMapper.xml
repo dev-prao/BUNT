@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper
+        PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.baseball.bunt.model.dao.CommunityDao">
+
+    <!-- 게시글 리스트 -->
+    <select id="boardList" resultType="CommunityBoard" parameterType="searchCondition">
+        SELECT
+        cb.community_board_id,
+        cb.content,
+        cb.user_id,
+        cb.title,
+        date_format(cb.reg_date, '%Y-%M-%d') AS reg_date,
+        COALESCE(bl.like_count, 0) AS like_count
+        FROM
+        COMMUNITY_BOARD cb
+        LEFT JOIN
+        (SELECT community_board_id, COUNT(*) AS like_count
+        FROM BOARD_LIKE_LIST
+        GROUP BY community_board_id) bl
+        ON cb.community_board_id = bl.community_board_id
+        <where>
+            cb.team_id = #{teamId}
+            <if test="key != 'none'">
+                AND ${key} LIKE concat('%', #{word}, '%')
+            </if>
+        </where>
+        ORDER BY cb.community_board_id DESC
+    </select>
+
+
+    <!-- 게시글 상세보기 -->
+    <select id="getDetail" resultType="CommunityBoard" parameterType="int">
+        SELECT community_board_id, team_id, content, user_id, title, date_format(reg_date, '%Y-%M-%d') AS reg_date, date_format(mod_date, '%Y-%M-%d') AS mod_date
+        FROM COMMUNITY_BOARD WHERE community_board_id = #{communityBoardId}
+    </select>
+
+    <!-- 게시글 등록 -->
+    <insert id="insertBoard" parameterType="CommunityBoard">
+        INSERT INTO COMMUNITY_BOARD (team_id, user_id, title, content) VALUES (#{teamId}, #{userId}, #{title}, #{content})
+    </insert>
+
+    <!-- 게시글 삭제 -->
+    <delete id="deleteBoard" parameterType="int">
+        DELETE FROM COMMUNITY_BOARD WHERE community_board_id = #{communityBoardId}
+    </delete>
+
+    <!-- 게시글 수정 -->
+    <update id="updateBoard" parameterType="CommunityBoard">
+        UPDATE COMMUNITY_BOARD SET title = #{title}, content = #{content}, mod_date = now() WHERE community_board_id = #{communityBoardId}
+    </update>
+
+</mapper>
